@@ -1,0 +1,13 @@
+{
+  "bot": {
+    "bot_token": "YOUR_TELEGRAM_BOT_TOKEN"
+  },
+  "user": {
+    "YOUR_TELEGRAM_USER_ID": {
+      "user_name": "YOUR_NAME",
+      "user_type": true,
+      "user_active": true,
+      "user_add_date": "2024-01-01"
+    }
+  }
+}

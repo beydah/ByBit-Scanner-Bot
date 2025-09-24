@@ -1,0 +1,25 @@
+# ===== CORE DEPENDENCIES ==========================================================================================
+
+# Web requests
+requests>=2.31.0
+
+# Bybit API
+pybit>=2.4.1
+
+# Telegram Bot API
+pyTelegramBotAPI>=4.14.0
+
+# GUI Framework
+PyQt6>=6.5.0
+
+# Date and time handling
+python-dateutil>=2.8.2
+
+# Threading and concurrency
+threading>=3.0.0
+
+# Logging and debugging
+logging>=0.5.1.2
+
+# Type hints and type checking
+typing-extensions>=4.5.0

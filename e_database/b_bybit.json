@@ -1,0 +1,24 @@
+{
+  "bot": {
+    "main_api_key": "YOUR_MAIN_API_KEY",
+    "main_secret_key": "YOUR_MAIN_SECRET_KEY"
+  },
+  "setting": {
+    "parity": "USDT",
+    "min_leverage": 26,
+    "min_volume": 10000000,
+    "zigzag_period": 10,
+    "period_1": "5DK",
+    "period_2": "15DK",
+    "wait_time": 60
+  },
+  "period": {
+    "5DK": "5",
+    "15DK": "15",
+    "30DK": "30",
+    "1ST": "60",
+    "2ST": "120",
+    "4ST": "240",
+    "1G": "D"
+  }
+}
