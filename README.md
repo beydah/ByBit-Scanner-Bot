@@ -158,7 +158,7 @@ Cryptocurrency trading involves substantial risk of loss. This bot is for educat
 
 ## 📜 License
 
-[Your License Here]
+This project is licensed under the GNU License - see the [LICENSE](https://github.com/beydah/ByBit-Scanner-Bot/blob/main/LICENSE) file for details.
 
 ## 🤝 Contributing
 
