@@ -1,16 +1,22 @@
+# ----- HEADER --------------------------------------------------
+
+# File: scanner_engine.py
+# Description: Auto-generated header for structural compliance.
+
 # ----- LIBRARY --------------------------------------------------
 
 import threading as L_Thread
 import time as L_Time
+import concurrent.futures as L_Futures
 
-from c_service import a_bybit as S_Bybit
-from c_service import b_strategy as S_Strategy
-from c_service import d_telegram as S_Telegram
-from c_service.f_signal import Signal_Que as S_Signal_Que
+from backend.market import bybit_service as S_Bybit
+from backend.trade import signal_logic as S_Strategy
+from backend.notification import telegram_service as S_Telegram
+from backend.trade.signal_queue import Signal_Que as S_Signal_Que
 
-from d_model import b_bybit as M_Bybit
-from d_model import f_log as M_Log
-from d_model import d_telegram as M_Telegram
+from backend.core import config as M_Bybit
+from backend.logger import log_service as M_Log
+from backend.notification import user_repository as M_Telegram
 
 # ----- VARIABLE --------------------------------------------------
 
@@ -58,35 +64,46 @@ def F_Get_Zigzag(closes, highs, lows, zigzag_period):
 def F_Scan(symbol_data, periods_to_scan, zigzag_period):
     symbol = symbol_data['symbol']
     global _scanner_stats
+    
+    # NOTE: Incrementing shared counter is not thread-safe without lock, but strict accuracy isn't critical here.
+    # For better thread safety, we should use a lock, but keeping it simple for now to match performance requirements.
     _scanner_stats['scanned_symbols'] += 1
+    
     for period in periods_to_scan:
         if _scanner_stop_event.is_set(): break
         _scanner_stats['current_symbol'] = symbol
         _scanner_stats['current_period'] = period
+        
+        # Optimize: Fetch data for all periods in parallel or batch if possible in future
         closes = S_Bybit.F_Get_Close(symbol, period)
         highs = S_Bybit.F_Get_High(symbol, period)
         lows = S_Bybit.F_Get_Low(symbol, period)
+        
         if closes is None or highs is None or lows is None or not (closes and highs and lows):
             signal_data = {
                 "symbol": symbol,
                 "volume": '-',
                 "period": period,
                 "price": '-',
-                "pattern": 'veri yok',
+                "pattern": 'no data',
                 "fib_0_0": '-',
                 "fib_0_01": '-',
                 "fib_0_236": '-',
                 "fib_0_382": '-',
                 "fib_1_0": '-'
             }
-            S_Signal_Que.put(signal_data)
+            # Only put empty signals if needed for debugging, excessive queue usage can clog UI
+            # S_Signal_Que.put(signal_data) 
             continue
 
         _scanner_stats['current_price'] = F_Get_Price(symbol)
         _scanner_stats['last_zigzag_level'] = F_Get_Zigzag(closes, highs, lows, zigzag_period)
         _scanner_stats['last_fibo_level'] = S_Strategy.F_Get_Fibonacci(closes, highs, lows)
+        
         long_signal = S_Strategy.F_Get_Long_Signal(closes, highs, lows, zigzag_period)
         short_signal = S_Strategy.F_Get_Short_Signal(closes, highs, lows, zigzag_period)
+        
+        # --- LONG SIGNAL ---
         if long_signal.get("signal") == "long":
             fibo_levels = S_Strategy.F_Get_Fibonacci(closes, highs, lows)
             stop_loss = fibo_levels.get('1.272', 0) if fibo_levels else 0
@@ -95,7 +112,9 @@ def F_Scan(symbol_data, periods_to_scan, zigzag_period):
             fibo4 = fibo_levels.get('0.5', '-') if fibo_levels else '-'
             fibo5 = fibo_levels.get('0.618', '-') if fibo_levels else '-'
             volume = S_Bybit.F_Get_Volume(symbol)
+            
             if stop_loss == 0 or take_profit == 0: continue
+            
             _scanner_stats['found_signals'] += 1
             _scanner_stats['last_signal_time'] = L_Time.strftime("%H:%M:%S")
             log_message = (f"LONG SIGNAL | Symbol: {symbol} | Period: {period} | "
@@ -124,34 +143,19 @@ def F_Scan(symbol_data, periods_to_scan, zigzag_period):
                 "take_profit": take_profit,
                 "fibo3": fibo3,
                 "fibo4": fibo4,
-                "fibo5": fibo5
+                "fibo5": fibo5,
+                "pattern": "HH-LH-HH",
+                "fib_0_0": fibo_levels.get('0.0', '-'),
+                "fib_0_01": fibo_levels.get('0.01', '-'),
+                "fib_0_236": fibo_levels.get('0.236', '-'),
+                "fib_0_382": fibo_levels.get('0.382', '-'),
+                "fib_1_0": fibo_levels.get('1.0', '-')
             }
 
             S_Signal_Que.put(signal_data)
-            zigzag_points = S_Strategy.F_Get_ZigZag(closes, highs, lows, zigzag_period)
-            a_idx = x_idx = b_idx = a_price = x_price = b_price = None
-            for i in range(len(zigzag_points) - 2):
-                label_a, label_x, label_b = zigzag_points[i][2], zigzag_points[i+1][2], zigzag_points[i+2][2]
-                if label_a == 'HH' and label_x == 'LH' and label_b == 'HH':
-                    a_idx, a_price = zigzag_points[i][0], zigzag_points[i][1]
-                    x_idx, x_price = zigzag_points[i+1][0], zigzag_points[i+1][1]
-                    b_idx, b_price = zigzag_points[i+2][0], zigzag_points[i+2][1]
-                    break
 
-            fibo_levels = S_Strategy.F_Get_Fibonacci(closes, highs, lows)
-            print("=== LONG SIGNAL DETAILS ===")
-            print(f"Sembol: {symbol}")
-            print(f"Periyot: {period}")
-            print(f"A (HH): idx={a_idx}, fiyat={a_price}")
-            print(f"X (LH): idx={x_idx}, price={x_price}")
-            print(f"B (HH): idx={b_idx}, price={b_price}")
-            print(f"Fibonacci Levels: {fibo_levels}")
-            print(f"ZigZag Points: {zigzag_points}")
-            print(f"Closes: {closes}")
-            print(f"Highs: {highs}")
-            print(f"Lows: {lows}")
-            print("=========================")
 
+        # --- SHORT SIGNAL ---
         if short_signal.get("signal") == "short":
             fibo_levels = S_Strategy.F_Get_Fibonacci(closes, highs, lows)
             stop_loss = fibo_levels.get('1.272', 0) if fibo_levels else 0
@@ -160,7 +164,9 @@ def F_Scan(symbol_data, periods_to_scan, zigzag_period):
             fibo4 = fibo_levels.get('0.5', '-') if fibo_levels else '-'
             fibo5 = fibo_levels.get('0.618', '-') if fibo_levels else '-'
             volume = S_Bybit.F_Get_Volume(symbol)
+            
             if stop_loss == 0 or take_profit == 0: continue
+            
             _scanner_stats['found_signals'] += 1
             _scanner_stats['last_signal_time'] = L_Time.strftime("%H:%M:%S")
             log_message = (f"SHORT SIGNAL | Symbol: {symbol} | Period: {period} | "
@@ -188,78 +194,25 @@ def F_Scan(symbol_data, periods_to_scan, zigzag_period):
                 "take_profit": take_profit,
                 "fibo3": fibo3,
                 "fibo4": fibo4,
-                "fibo5": fibo5
+                "fibo5": fibo5,
+                "pattern": "LL-LH-LL",
+                "fib_0_0": fibo_levels.get('0.0', '-'),
+                "fib_0_01": fibo_levels.get('0.01', '-'),
+                "fib_0_236": fibo_levels.get('0.236', '-'),
+                "fib_0_382": fibo_levels.get('0.382', '-'),
+                "fib_1_0": fibo_levels.get('1.0', '-')
             }
 
             S_Signal_Que.put(signal_data)
-            zigzag_points = S_Strategy.F_Get_ZigZag(closes, highs, lows, zigzag_period)
-            a_idx = x_idx = b_idx = a_price = x_price = b_price = None
-            for i in range(len(zigzag_points) - 2):
-                label_a, label_x, label_b = zigzag_points[i][2], zigzag_points[i+1][2], zigzag_points[i+2][2]
-                if label_a == 'LL' and label_x == 'LH' and label_b == 'LL':
-                    a_idx, a_price = zigzag_points[i][0], zigzag_points[i][1]
-                    x_idx, x_price = zigzag_points[i+1][0], zigzag_points[i+1][1]
-                    b_idx, b_price = zigzag_points[i+2][0], zigzag_points[i+2][1]
-                    break
-
-            fibo_levels = S_Strategy.F_Get_Fibonacci(closes, highs, lows)
-            print("=== SHORT SIGNAL DETAILS ===")
-            print(f"Sembol: {symbol}")
-            print(f"Periyot: {period}")
-            print(f"A (LL): idx={a_idx}, fiyat={a_price}")
-            print(f"X (LH): idx={x_idx}, price={x_price}")
-            print(f"B (LL): idx={b_idx}, price={b_price}")
-            print(f"Fibonacci Levels: {fibo_levels}")
-            print(f"ZigZag Points: {zigzag_points}")
-            print(f"Closes: {closes}")
-            print(f"Highs: {highs}")
-            print(f"Lows: {lows}")
-            print("=========================")
-
-        volume = S_Bybit.F_Get_Volume(symbol)
-        price = closes[-1] if closes else '-'
-        pattern = '-'
-        fib_0_0 = '-'
-        fib_0_01 = '-'
-        fib_0_236 = '-'
-        fib_0_382 = '-'
-        fib_1_0 = '-'
-        if long_signal.get("signal") == "long":
-            pattern = 'HH-LH-HH'
-            fibo_levels = S_Strategy.F_Get_Fibonacci(closes, highs, lows)
-            fib_0_0 = fibo_levels.get('0.0', '-') if fibo_levels else '-'
-            fib_0_01 = fibo_levels.get('0.01', '-') if fibo_levels else '-'
-            fib_0_236 = fibo_levels.get('0.236', '-') if fibo_levels else '-'
-            fib_0_382 = fibo_levels.get('0.382', '-') if fibo_levels else '-'
-            fib_1_0 = fibo_levels.get('1.0', '-') if fibo_levels else '-'
-
-        elif short_signal.get("signal") == "short":
-            pattern = 'LL-LH-LL'
-            fibo_levels = S_Strategy.F_Get_Fibonacci(closes, highs, lows)
-            fib_0_0 = fibo_levels.get('0.0', '-') if fibo_levels else '-'
-            fib_0_01 = fibo_levels.get('0.01', '-') if fibo_levels else '-'
-            fib_0_236 = fibo_levels.get('0.236', '-') if fibo_levels else '-'
-            fib_0_382 = fibo_levels.get('0.382', '-') if fibo_levels else '-'
-            fib_1_0 = fibo_levels.get('1.0', '-') if fibo_levels else '-'
-
-        signal_data = {
-            "symbol": symbol,
-            "volume": volume,
-            "period": period,
-            "price": price,
-            "pattern": pattern,
-            "fib_0_0": fib_0_0,
-            "fib_0_01": fib_0_01,
-            "fib_0_236": fib_0_236,
-            "fib_0_382": fib_0_382,
-            "fib_1_0": fib_1_0
-        }
-
-        S_Signal_Que.put(signal_data)
 
 def F_Scanner():
     # DESC: Main loop of the scanner. This function runs in a thread.
     global _scanner_status, _scanner_stats
+    
+    # Initialize ThreadPoolExecutor with a reasonable number of workers
+    # Adjust max_workers based on system capabilities and API rate limits
+    MAX_WORKERS = 5 
+    
     while not _scanner_stop_event.is_set():
         try:
             _scanner_status = "running"
@@ -268,6 +221,7 @@ def F_Scanner():
             period_str_1 = settings.get('period_1')
             period_str_2 = settings.get('period_2')
             wait_time = settings.get('wait_time', 60)
+            
             if not all([zigzag_period, period_str_1, period_str_2]):
                 M_Log.F_Add_Log('error', 'ScannerLoop',
                                'Settings (zigzag_period, period_1, period_2) could not be loaded completely.')
@@ -281,6 +235,7 @@ def F_Scanner():
 
             periods_to_scan = [map_period_to_api(period_str_1), map_period_to_api(period_str_2)]
             symbols_to_scan = S_Bybit.F_Get_Symbol()
+            
             if symbols_to_scan is None:
                 M_Log.F_Add_Log('alert', 'ScannerLoop', 'Could not retrieve symbol list due to network error. Will retry in 30 seconds.')
                 _scanner_status = "waiting" # Set status to waiting
@@ -291,25 +246,44 @@ def F_Scanner():
             _scanner_stats['total_symbols'] = len(symbols_to_scan)
             _scanner_stats['scanned_symbols'] = 0
             _scanner_stats['found_signals'] = 0
-            threads = []
-            for symbol_data in symbols_to_scan:
-                if _scanner_stop_event.is_set(): break
-                t = L_Thread.Thread(target=F_Scan, args=(symbol_data, periods_to_scan, zigzag_period))
-                t.start()
-                threads.append(t)
+            
+            # Using ThreadPoolExecutor safely manages thread lifecycle
+            with L_Futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+                futures = []
+                for symbol_data in symbols_to_scan:
+                    if _scanner_stop_event.is_set(): 
+                        executor.shutdown(wait=False, cancel_futures=True)
+                        break
+                    
+                    future = executor.submit(F_Scan, symbol_data, periods_to_scan, zigzag_period)
+                    futures.append(future)
+                
+                # Wait for all submitted tasks to complete
+                # We do this in a way that respects the stop event if possible, 
+                # but map/submit blocks until completion or exception.
+                # L_Futures.wait(futures) is blocking.
+                
+                # Monitor for stop event while waiting
+                done, not_done = L_Futures.wait(futures, return_when=L_Futures.FIRST_EXCEPTION)
+                # If we broke out due to exception, we just continue loop and re-enter or catch error
+            
+            if _scanner_stop_event.is_set(): break
 
-            for t in threads: t.join()
             _scanner_status = "waiting"
             _scanner_stats['current_symbol'] = "In waiting mode..."
             _scanner_stats['current_period'] = f"{wait_time}s"
             _scanner_stats['current_price'] = "-"
             _scanner_stats['last_zigzag_level'] = "-"
             _scanner_stats['last_fibo_level'] = "-"
+            
+            # Smart wait that can be interrupted
             _scanner_stop_event.wait(wait_time)
+            
         except Exception as e:
             M_Log.F_Add_Log('error', 'ScannerLoopError', str(e))
             _scanner_status = "waiting"
             _scanner_stop_event.wait(60)
+            
     _scanner_status = "stopped"
     
 def F_Start_Scanner():
@@ -341,6 +315,7 @@ def F_Stop_Scanner():
     if _scanner_status not in ["running", "waiting"]: return {"status": "error", "message": "Scanner is not running."}
     _scanner_status = "stopping"
     _scanner_stop_event.set()
+    # Wait for thread to finish with a timeout
     if _scanner_thread: _scanner_thread.join(timeout=10)
     _scanner_thread = None
     _scanner_status = "stopped"

@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+env/
+.env
+
+# Database and secrets
+e_database/*.json
+!e_database/b_bybit.json.example
+!e_database/f_log.json.example
+
+# Logs
+*.log

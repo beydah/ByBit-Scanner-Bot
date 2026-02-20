@@ -1,3 +1,8 @@
+# ----- HEADER --------------------------------------------------
+
+# File: signal_logic.py
+# Description: Auto-generated header for structural compliance.
+
 # ----- FUNCTION --------------------------------------------------
 
 def F_Get_Highest(p_high, p_period):

@@ -1,4 +1,9 @@
-# ===== LIBRARY ========================================================================================================
+# ----- HEADER --------------------------------------------------
+
+# File: controller.py
+# Description: Auto-generated header for structural compliance.
+
+# ----- LIBRARY --------------------------------------------------
 
 import sys as L_SYS
 import time as L_Time
@@ -7,14 +12,14 @@ from datetime import datetime as L_Date
 from PyQt6.QtWidgets import QApplication as L_Application, QMainWindow as L_Main_Window, QTableWidgetItem as L_Table_Widget_Item, QMessageBox as L_Message_Box
 from PyQt6.QtCore import QThread as L_Thread, pyqtSignal as L_Signal, QTimer as L_Timer
 
-from a_view.view import C_Ui_Main_Window as V_Main
-from c_service import c_scanner as S_Scanner
-from c_service.f_signal import Signal_Que as S_Signal_Que
-from d_model import b_bybit as M_Bybit
-from d_model import d_telegram as M_Telegram
-from d_model import f_log as M_Log
+from frontend.view import C_Ui_Main_Window as V_Main
+from backend.market import scanner_engine as S_Scanner
+from backend.trade.signal_queue import Signal_Que as S_Signal_Que
+from backend.core import config as M_Bybit
+from backend.notification import user_repository as M_Telegram
+from backend.logger import log_service as M_Log
 
-# ===== CLASS ========================================================================================================
+# ----- CLASS --------------------------------------------------
 
 class C_Scanner_Status_Thread(L_Thread):
     # DESC: Thread that continuously monitors the scanner status
@@ -402,7 +407,7 @@ class C_Main_Window(L_Main_Window):
         self.status_thread.wait()
         event.accept()
 
-# ===== START ========================================================================================================
+# ----- START --------------------------------------------------
 
 if __name__ == '__main__':
     app = L_Application(L_SYS.argv)

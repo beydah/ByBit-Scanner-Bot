@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  bybit-bot:
+    build: .
+    container_name: bybit-bot
+    restart: unless-stopped
+    volumes:
+      # Persist the database and logs
+      - ./bot_data.db:/app/bot_data.db
+      - ./bot.log:/app/bot.log
+      - ./bot_headless.log:/app/bot_headless.log
+    env_file:
+      - .env
+    environment:
+      - TZ=UTC

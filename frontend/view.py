@@ -1,8 +1,8 @@
-# ===== RULE ========================================================================================================
+# ----- HEADER --------------------------------------------------
+# File: view.py
+# Description: Auto-generated header for structural compliance.
 
-# -*- coding: utf-8 -*-
-
-# ===== LIBRARY ========================================================================================================
+# ----- LIBRARY --------------------------------------------------
 
 from PyQt6.QtCore import QTimer as L_Timer, Qt as L_Qt, QDate as L_Date
 from PyQt6.QtWidgets import (
@@ -16,13 +16,13 @@ from PyQt6.QtGui import QIcon as L_Icon, QFont as L_Font
 import sys as L_SYS
 import os as L_OS
 
-from d_model import b_bybit as M_Bybit
+from backend.core import config as M_Bybit
 
-# ===== VARIABLE ========================================================================================================
+# ----- VARIABLE --------------------------------------------------
 
 L_SYS.path.append(L_OS.path.dirname(L_OS.path.dirname(L_OS.path.abspath(__file__))))
 
-# ===== CLASS ========================================================================================================
+# ----- CLASS --------------------------------------------------
 
 class C_Ui_Main_Window(object):
     def F_Setup_Ui(self, p_main_window):

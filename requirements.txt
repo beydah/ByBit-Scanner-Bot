@@ -4,7 +4,7 @@
 requests>=2.31.0
 
 # Bybit API
-pybit>=2.4.1
+pybit>=5.0.0
 
 # Telegram Bot API
 pyTelegramBotAPI>=4.14.0
@@ -23,3 +23,6 @@ logging>=0.5.1.2
 
 # Type hints and type checking
 typing-extensions>=4.5.0
+
+# Environment variables
+python-dotenv>=1.0.0
