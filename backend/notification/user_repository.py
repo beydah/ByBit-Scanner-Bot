@@ -6,7 +6,7 @@
 
 import json as L_JSON
 from datetime import datetime as L_Date
-from backend.core import database as DB
+from backend.core import config as M_Config
 
 # ----- VARIABLE --------------------------------------------------
 
@@ -20,14 +20,15 @@ def F_Get_Telegram_Path(): return TELEGRAM_FILE_PATH
 def F_Get_Telegram_File(): return {}
 def F_Add_Telegram_File(p_data): return False
 
-# DESC: Retrieves the stored Telegram bot token.
+# DESC: Retrieves the stored Telegram bot token from environment.
 def F_Get_Bot_Token():
-    return DB.kv_get('settings', 'telegram_bot_token')
+    keys = M_Config.F_Get_Telegram_Keys()
+    return keys.get("token")
 
-# DESC: Saves or updates the Telegram bot token.
+# DESC: Saves or updates the Telegram bot token (Deprecated: use .env).
 def F_Add_Bot_Token(p_token):
-    DB.kv_set('settings', 'telegram_bot_token', p_token)
-    return True
+    print("WARNING: Setting token via DB is deprecated. Please use TELEGRAM_BOT_TOKEN in .env")
+    return False
 
 # DESC: Retrieves data for all users.
 def F_Get_All_Users():

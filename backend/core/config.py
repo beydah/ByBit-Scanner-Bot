@@ -18,7 +18,12 @@ def F_Validate_Environment():
     """
     Validates that essential environment variables are set.
     """
-    required_keys = ["BYBIT_MAIN_API_KEY", "BYBIT_MAIN_SECRET_KEY"]
+    required_keys = [
+        "BYBIT_MAIN_API_KEY", 
+        "BYBIT_MAIN_SECRET_KEY",
+        "TELEGRAM_BOT_TOKEN",
+        "TELEGRAM_USER_ID"
+    ]
     missing = [key for key in required_keys if not L_OS.getenv(key)]
     
     if missing:
@@ -44,6 +49,12 @@ _period_cache = None
 # Legacy Path Functions (kept for compatibility but no-op or specific usage)
 def F_Add_Bybit_Path(p_path): pass
 def F_Get_Bybit_Path(): return "SQLite Database"
+
+# DESC: Retrieves Telegram Bot Token and User ID from environment.
+def F_Get_Telegram_Keys():
+    token = L_OS.getenv("TELEGRAM_BOT_TOKEN")
+    user_id = L_OS.getenv("TELEGRAM_USER_ID")
+    return {"token": token, "user_id": user_id}
 
 # DESC: Retrieves the stored Bybit API and Secret keys.
 # PRIORITY: Environment Variables ONLY now (for security)

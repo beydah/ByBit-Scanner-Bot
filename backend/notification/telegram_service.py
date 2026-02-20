@@ -16,13 +16,15 @@ from telebot import TeleBot as L_Telebot
 from typing import Dict, Any, Optional
 
 from c_service import e_transaction as S_Transaction
+from backend.core import config as M_Bybit
 from backend.logger import log_service as M_Log
 from backend.notification import user_repository as M_Telegram
 
 # ----- VARIABLE --------------------------------------------------
 
-L_SYS.path.append(L_OS.path.dirname(L_OS.path.dirname(L_OS.path.abspath(__file__))))
-BOT_TOKEN = M_Telegram.F_Get_Bot_Token()
+_keys = M_Bybit.F_Get_Telegram_Keys()
+BOT_TOKEN = _keys.get("token")
+ADMIN_USER_ID = _keys.get("user_id")
 BOT = L_Telebot(BOT_TOKEN)
 
 # ----- FUNCTION --------------------------------------------------
