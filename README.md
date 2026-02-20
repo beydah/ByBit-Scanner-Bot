@@ -84,7 +84,6 @@ python headless_main.py
 
 | Resource                           | Description                                       |
 | :--------------------------------- | :------------------------------------------------ |
-| [WIKI.md](WIKI.md)                 | Full technical specification and troubleshooting. |
 | [LICENSE](LICENSE)                 | MIT License terms.                                |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Standardized coding and structural rules.         |
 | [SECURITY.md](SECURITY.md)         | Vulnerability reporting procedure.                |
