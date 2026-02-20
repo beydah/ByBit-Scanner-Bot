@@ -58,8 +58,13 @@ root/
 3. **Configure**
    Create a `.env` in the root and add your Bybit V5 credentials:
    ```env
-   BYBIT_MAIN_API_KEY=your_key
-   BYBIT_MAIN_SECRET_KEY=your_secret
+   # Bybit API Credentials
+   BYBIT_MAIN_API_KEY=YOUR_API_KEY_HERE
+   BYBIT_MAIN_SECRET_KEY=YOUR_SECRET_KEY_HERE
+
+   # Telegram Configuration
+   TELEGRAM_BOT_TOKEN=YOUR_BOT_TOKEN_HERE
+   TELEGRAM_USER_ID=YOUR_TELEGRAM_ID_HERE
    ```
 
 ---
